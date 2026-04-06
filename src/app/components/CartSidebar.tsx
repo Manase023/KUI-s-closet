@@ -1,8 +1,15 @@
 'use client';
+import Link from 'next/link';
 import { useCart } from '../store/CartContext';
 
-export default function CartSidebar() {
+export default function CartSidebar({ whatsappNumber }: { whatsappNumber?: string | null }) {
   const { cart, updateQty, isCartOpen, setCartOpen, cartTotal } = useCart();
+
+  const handleWhatsAppOrder = () => {
+    const itemsList = cart.map(item => `- ${item.name} (${item.selectedSize}/${item.selectedColor}) x${item.qty} - $${(item.salePrice || item.price) * item.qty}`).join('\n');
+    const msg = encodeURIComponent(`Hi! I'd like to place an order for:\n\n${itemsList}\n\nTotal: $${cartTotal}`);
+    window.open(`https://wa.me/${whatsappNumber?.replace(/\+/g, '') || '1234567890'}?text=${msg}`, '_blank');
+  };
 
   return (
     <>
@@ -53,7 +60,30 @@ export default function CartSidebar() {
               <span className="cart-total-label">Subtotal</span>
               <span className="cart-total-price">${cartTotal}</span>
             </div>
-            <button className="btn-checkout">Proceed to Checkout</button>
+            <Link href="/checkout" onClick={() => setCartOpen(false)} style={{ textDecoration: 'none' }}>
+              <button className="btn-checkout">Proceed to Checkout</button>
+            </Link>
+            <button 
+              className="btn-whatsapp" 
+              onClick={handleWhatsAppOrder}
+              style={{
+                width: '100%',
+                padding: '16px',
+                marginTop: '12px',
+                background: '#25D366',
+                color: '#fff',
+                border: 'none',
+                fontFamily: 'var(--sans)',
+                fontSize: '11px',
+                letterSpacing: '2px',
+                textTransform: 'uppercase',
+                fontWeight: '600',
+                cursor: 'pointer',
+                borderRadius: '4px'
+              }}
+            >
+              Order All via WhatsApp
+            </button>
           </div>
         )}
       </div>

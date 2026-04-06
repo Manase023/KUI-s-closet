@@ -1,25 +1,27 @@
 export const dynamic = 'force-dynamic';
-import { getProducts, getCategories, getOrders, getHeroSettings, getStoreSettings } from '../actions';
+import { getProducts, getCategories, getOrders, getHeroSettings, getStoreSettings, getDashboardStats, getAnalyticsReport } from '../actions';
 import AdminApp from './AdminApp';
 
 export default async function AdminPage() {
-  const [products, categories, orders, hero, store] = await Promise.all([
+  const [products, categories, orders, hero, store, stats, analytics] = await Promise.all([
     getProducts(),
     getCategories(),
     getOrders(),
     getHeroSettings(),
-    getStoreSettings()
+    getStoreSettings(),
+    getDashboardStats(),
+    getAnalyticsReport()
   ]);
 
   return (
-    <div className="admin-app">
-      <AdminApp
-        initialProducts={products}
-        initialCategories={categories}
-        initialOrders={orders}
-        initialHero={hero}
-        initialStore={store}
-      />
-    </div>
+    <AdminApp
+      initialProducts={products}
+      initialCategories={categories}
+      initialOrders={orders}
+      initialHero={hero}
+      initialStore={store}
+      initialStats={stats}
+      initialAnalytics={analytics}
+    />
   );
 }

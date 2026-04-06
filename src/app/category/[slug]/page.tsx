@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getCategoryBySlug, getProductsByCategory, getStoreSettings } from '@/app/actions';
@@ -5,6 +6,17 @@ import ClientWrapper from '@/app/components/ClientWrapper';
 import AddToCartButton from '@/app/components/AddToCartButton';
 
 export const dynamic = 'force-dynamic';
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const resolvedParams = await params;
+  const category = await getCategoryBySlug(resolvedParams.slug);
+  if (!category) return { title: 'Category Not Found' };
+
+  return {
+    title: `${category.name} — KUI'S CLOSET`,
+    description: `Browse our ${category.name} collection at KUI'S CLOSET.`,
+  };
+}
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -23,7 +35,7 @@ export default async function CategoryPage({ params }: PageProps) {
   const storeName = store?.store_name || "KUI'S CLOSET";
 
   return (
-    <ClientWrapper storeName={storeName}>
+    <ClientWrapper storeName={storeName} whatsappNumber={store?.whatsapp_number}>
       <div style={{ paddingTop: '100px', minHeight: '100vh', background: 'var(--bg)' }}>
         
         {/* CATEGORY HEADER */}

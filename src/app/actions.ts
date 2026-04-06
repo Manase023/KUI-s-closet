@@ -56,6 +56,22 @@ export type StoreSettings = {
   wishlist_feature: number;
   newsletter_popup: number;
   maintenance_mode: number;
+  whatsapp_number: string | null;
+};
+
+export type DashboardStats = {
+  revenueToday: number;
+  ordersToday: number;
+  totalProducts: number;
+  visitorsToday: number;
+};
+
+export type AnalyticsReport = {
+  dailyRevenue: { date: string, val: number }[];
+  dailyVisitors: { date: string, val: number }[];
+  monthlyRevenue: number;
+  monthlyOrders: number;
+  topProducts: { name: string, count: number }[];
 };
 
 // ── AUTH ───────────────────────────────────────────────────────────────
@@ -178,7 +194,73 @@ export async function getStoreSettings(): Promise<StoreSettings | null> {
 export async function saveStoreSettings(data: Partial<StoreSettings>): Promise<void> {
   const db = await getDb();
   await db.run(
-    'UPDATE store_settings SET store_name=?, currency=?, contact_email=?, free_shipping_threshold=?, show_sale_badge=?, wishlist_feature=?, newsletter_popup=?, maintenance_mode=? WHERE id=1',
-    [data.store_name, data.currency, data.contact_email, data.free_shipping_threshold, data.show_sale_badge ? 1 : 0, data.wishlist_feature ? 1 : 0, data.newsletter_popup ? 1 : 0, data.maintenance_mode ? 1 : 0]
+    'UPDATE store_settings SET store_name=?, currency=?, contact_email=?, free_shipping_threshold=?, show_sale_badge=?, wishlist_feature=?, newsletter_popup=?, maintenance_mode=?, whatsapp_number=? WHERE id=1',
+    [data.store_name, data.currency, data.contact_email, data.free_shipping_threshold, data.show_sale_badge ? 1 : 0, data.wishlist_feature ? 1 : 0, data.newsletter_popup ? 1 : 0, data.maintenance_mode ? 1 : 0, data.whatsapp_number ?? null]
   );
+  revalidatePath('/');
+}
+
+// ── DASHBOARD & TRACKING ──────────────────────────────────────────────
+export async function trackVisit(path: string, ip?: string, userAgent?: string): Promise<void> {
+  const db = await getDb();
+  await db.run(
+    'INSERT INTO visits (path, ip, user_agent) VALUES (?, ?, ?)',
+    [path, ip || 'unknown', userAgent || 'unknown']
+  );
+}
+
+export async function getDashboardStats(): Promise<DashboardStats> {
+  const db = await getDb();
+  
+  const today = new Date().toISOString().split('T')[0];
+  
+  const revenue = await db.get('SELECT SUM(total) as val FROM orders WHERE date LIKE ?', [`%${today}%`]);
+  const ordersCount = await db.get('SELECT COUNT(*) as val FROM orders WHERE date LIKE ?', [`%${today}%`]);
+  const productsCount = await db.get('SELECT COUNT(*) as val FROM products');
+  const visitorsCount = await db.get('SELECT COUNT(DISTINCT ip) as val FROM visits WHERE timestamp >= date("now")');
+
+  return {
+    revenueToday: revenue?.val || 0,
+    ordersToday: ordersCount?.val || 0,
+    totalProducts: productsCount?.val || 0,
+    visitorsToday: visitorsCount?.val || 0,
+  };
+}
+
+export async function getAnalyticsReport(): Promise<AnalyticsReport> {
+  const db = await getDb();
+  
+  // Last 30 days daily revenue
+  const dailyRev = await db.all(`
+    SELECT date(date) as d, SUM(total) as v 
+    FROM orders 
+    WHERE date >= date('now', '-30 days')
+    GROUP BY d
+    ORDER BY d ASC
+  `);
+
+  // Last 30 days daily visitors
+  const dailyVis = await db.all(`
+    SELECT date(timestamp) as d, COUNT(DISTINCT ip) as v 
+    FROM visits 
+    WHERE timestamp >= date('now', '-30 days')
+    GROUP BY d
+    ORDER BY d ASC
+  `);
+
+  // Monthly stats
+  const monthStart = new Date().toISOString().slice(0, 7); // YYYY-MM
+  const monRev = await db.get('SELECT SUM(total) as val FROM orders WHERE date LIKE ?', [`%${monthStart}%`]);
+  const monOrd = await db.get('SELECT COUNT(*) as val FROM orders WHERE date LIKE ?', [`%${monthStart}%`]);
+
+  // Top Products (simulated since we don't have order_items yet)
+  const topProd: { name: string, count: number }[] = [];
+
+  return {
+    dailyRevenue: dailyRev.map(r => ({ date: r.d, val: r.v })),
+    dailyVisitors: dailyVis.map(v => ({ date: v.d, val: v.v })),
+    monthlyRevenue: monRev?.val || 0,
+    monthlyOrders: monOrd?.val || 0,
+    topProducts: topProd
+  };
 }

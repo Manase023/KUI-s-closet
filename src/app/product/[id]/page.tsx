@@ -1,9 +1,21 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getProductById, getStoreSettings } from '@/app/actions';
 import ClientWrapper from '@/app/components/ClientWrapper';
 import ProductOptions from '@/app/components/ProductOptions';
 
 export const dynamic = 'force-dynamic';
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const resolvedParams = await params;
+  const product = await getProductById(parseInt(resolvedParams.id, 10));
+  if (!product) return { title: 'Product Not Found' };
+
+  return {
+    title: `${product.name} — KUI'S CLOSET`,
+    description: product.description || `Buy ${product.name} at KUI'S CLOSET.`,
+  };
+}
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -74,7 +86,7 @@ export default async function ProductPage({ params }: PageProps) {
 
             <div style={{ height: '1px', background: 'var(--border)', margin: '32px 0' }}></div>
 
-            <ProductOptions product={product} />
+            <ProductOptions product={product} whatsappNumber={store?.whatsapp_number} />
             
             {/* Additional editorial copy typical for fashion pdp */}
             <div style={{ marginTop: '48px' }}>

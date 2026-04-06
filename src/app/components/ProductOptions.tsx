@@ -5,9 +5,10 @@ import type { Product } from '../actions';
 
 type Props = {
   product: Product;
+  whatsappNumber?: string | null;
 };
 
-export default function ProductOptions({ product }: Props) {
+export default function ProductOptions({ product, whatsappNumber }: Props) {
   const sizes = product.sizes ? product.sizes.split(',').map(s => s.trim()) : [];
   const colors = product.colors ? product.colors.split(',').map(c => c.trim()) : [];
 
@@ -38,7 +39,7 @@ export default function ProductOptions({ product }: Props) {
                   color: size === s ? 'var(--bg)' : 'var(--cream)',
                   border: `1px solid ${size === s ? 'var(--cream)' : 'var(--border)'}`,
                   fontSize: '12px',
-                  cursor: 'none',
+                  cursor: 'pointer',
                   transition: 'all 0.2s',
                   borderRadius: '2px'
                 }}
@@ -64,7 +65,7 @@ export default function ProductOptions({ product }: Props) {
                   color: color === c ? 'var(--bg)' : 'var(--cream)',
                   border: `1px solid ${color === c ? 'var(--cream)' : 'var(--border)'}`,
                   fontSize: '12px',
-                  cursor: 'none',
+                  cursor: 'pointer',
                   transition: 'all 0.2s',
                   borderRadius: '2px'
                 }}
@@ -90,7 +91,7 @@ export default function ProductOptions({ product }: Props) {
           letterSpacing: '2px',
           textTransform: 'uppercase',
           fontWeight: '500',
-          cursor: isOutOfStock ? 'not-allowed' : 'none',
+          cursor: isOutOfStock ? 'not-allowed' : 'pointer',
           opacity: isOutOfStock ? 0.5 : 1,
           transition: 'transform 0.2s, background 0.2s'
         }}
@@ -103,6 +104,38 @@ export default function ProductOptions({ product }: Props) {
       >
         {isOutOfStock ? 'Out of Stock' : 'Add to Bag'}
       </button>
+
+      {!isOutOfStock && (
+        <button
+          onClick={() => {
+            const msg = encodeURIComponent(`Hi! I'd like to order: ${product.name}${size ? ` (Size: ${size})` : ''}${color ? ` (Color: ${color})` : ''}. Price: $${product.salePrice || product.price}`);
+            window.open(`https://wa.me/${whatsappNumber?.replace(/\+/g, '') || '1234567890'}?text=${msg}`, '_blank');
+          }}
+          style={{
+            width: '100%',
+            padding: '16px',
+            marginTop: '12px',
+            background: 'transparent',
+            color: 'var(--accent)',
+            border: '1px solid var(--accent)',
+            fontFamily: 'var(--sans)',
+            fontSize: '11px',
+            letterSpacing: '2px',
+            textTransform: 'uppercase',
+            fontWeight: '500',
+            cursor: 'pointer',
+            transition: 'all 0.2s'
+          }}
+          onMouseOver={e => {
+            e.currentTarget.style.background = 'rgba(255, 42, 117, 0.05)';
+          }}
+          onMouseOut={e => {
+            e.currentTarget.style.background = 'transparent';
+          }}
+        >
+          Order via WhatsApp
+        </button>
+      )}
     </div>
   );
 }
