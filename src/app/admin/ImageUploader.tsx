@@ -8,6 +8,7 @@ type Props = {
 
 export default function ImageUploader({ photos, onChange }: Props) {
   const [isDragging, setIsDragging] = useState(false);
+  const [url, setUrl] = useState('');
 
   const handleFiles = (files: FileList) => {
     const newPhotos: string[] = [...photos];
@@ -34,6 +35,13 @@ export default function ImageUploader({ photos, onChange }: Props) {
     e.preventDefault();
     setIsDragging(false);
     if (e.dataTransfer.files) handleFiles(e.dataTransfer.files);
+  };
+
+  const handleAddUrl = () => {
+    if (url.trim()) {
+      onChange([...photos, url.trim()]);
+      setUrl('');
+    }
   };
 
   const removePhoto = (index: number) => {
@@ -63,6 +71,17 @@ export default function ImageUploader({ photos, onChange }: Props) {
           <p>Drag & drop product photos here</p>
           <span className="text-sm text-muted">or click to browse files</span>
         </div>
+      </div>
+
+      <div className="url-input-container">
+        <input 
+          type="text" 
+          value={url} 
+          onChange={(e) => setUrl(e.target.value)} 
+          placeholder="Paste image URL here..." 
+          className="url-input"
+        />
+        <button type="button" onClick={handleAddUrl} className="url-add-btn">Add URL</button>
       </div>
 
       {photos.length > 0 && (
@@ -126,6 +145,37 @@ export default function ImageUploader({ photos, onChange }: Props) {
           width: 100%;
           height: 100%;
           object-fit: cover;
+        }
+        .url-input-container {
+          display: flex;
+          gap: 8px;
+          margin-top: 12px;
+        }
+        .url-input {
+          flex: 1;
+          padding: 10px 14px;
+          border: 1px solid #e5e7eb;
+          border-radius: 8px;
+          font-size: 13px;
+          outline: none;
+          transition: border-color 0.2s;
+        }
+        .url-input:focus {
+          border-color: #3b82f6;
+        }
+        .url-add-btn {
+          padding: 10px 16px;
+          background: #111827;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-size: 13px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+        .url-add-btn:hover {
+          background: #374151;
         }
         .photo-remove {
           position: absolute;

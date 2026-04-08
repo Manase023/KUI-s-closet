@@ -1,21 +1,19 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  allowedDevOrigins: [
-    '6075-217-199-144-40.ngrok-free.app',
-    '*.ngrok-free.app',
-    'https://6075-217-199-144-40.ngrok-free.app',
-    'https://*.ngrok-free.app',
-    'wss://*.ngrok-free.app',
-    'wss://6075-217-199-144-40.ngrok-free.app',
-    'localhost:3000'
-  ],
-  experimental: {
-    serverActions: {
-      allowedOrigins: ['*.ngrok-free.app', '6075-217-199-144-40.ngrok-free.app'],
+  output: 'standalone',
+  headers: async () => [
+    {
+      source: '/(.*)',
+      headers: [
+        { key: 'X-Content-Type-Options', value: 'nosniff' },
+        { key: 'X-Frame-Options', value: 'DENY' },
+        { key: 'X-XSS-Protection', value: '1; mode=block' },
+        { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+        { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+      ],
     },
-  },
+  ],
 };
 
 export default nextConfig;

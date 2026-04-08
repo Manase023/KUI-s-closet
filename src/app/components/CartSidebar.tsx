@@ -1,11 +1,16 @@
 'use client';
 import Link from 'next/link';
 import { useCart } from '../store/CartContext';
+import { createOrder } from '../actions';
 
 export default function CartSidebar({ whatsappNumber }: { whatsappNumber?: string | null }) {
   const { cart, updateQty, isCartOpen, setCartOpen, cartTotal } = useCart();
 
-  const handleWhatsAppOrder = () => {
+  const handleWhatsAppOrder = async () => {
+    // Record in DB
+    const itemsCount = cart.reduce((acc, i) => acc + i.qty, 0);
+    await createOrder('WhatsApp Customer', itemsCount, cartTotal, 'pending');
+
     const itemsList = cart.map(item => `- ${item.name} (${item.selectedSize}/${item.selectedColor}) x${item.qty} - $${(item.salePrice || item.price) * item.qty}`).join('\n');
     const msg = encodeURIComponent(`Hi! I'd like to place an order for:\n\n${itemsList}\n\nTotal: $${cartTotal}`);
     window.open(`https://wa.me/${whatsappNumber?.replace(/\+/g, '') || '1234567890'}?text=${msg}`, '_blank');
@@ -30,7 +35,7 @@ export default function CartSidebar({ whatsappNumber }: { whatsappNumber?: strin
               <div key={item.cartId} className="cart-item">
                 <div className="cart-item-img">
                   {item.photos[0] ? (
-                     <img src={item.photos[0]} alt={item.name} style={{width:'100%', height:'100%', objectFit:'cover'}} />
+                     <img src={item.photos[0]} alt={item.name} />
                   ) : (
                     <span>{item.emoji}</span>
                   )}
