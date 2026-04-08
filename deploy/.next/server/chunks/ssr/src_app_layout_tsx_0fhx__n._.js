@@ -1,0 +1,3 @@
+module.exports=[27572,a=>{"use strict";var b=a.i(7997);a.s(["default",0,function({children:a}){return(0,b.jsxs)("html",{lang:"en",children:[(0,b.jsx)("head",{children:(0,b.jsx)("link",{href:"https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap",rel:"stylesheet"})}),(0,b.jsx)("body",{suppressHydrationWarning:!0,children:a})]})},"metadata",0,{title:"KUI's CLOSET — Modern Fashion",description:"Curated pieces for the modern wardrobe — where minimalist design meets enduring elegance."}])},50645,a=>{a.n(a.i(27572))}];
+
+//# sourceMappingURL=src_app_layout_tsx_0fhx__n._.js.map
