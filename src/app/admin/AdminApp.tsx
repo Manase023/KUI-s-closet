@@ -2,9 +2,13 @@
 
 import { useState } from 'react';
 import { useAdmin } from './AdminContext';
-import { Product, Category, Order, HeroSettings, StoreSettings } from '../actions';
-import * as actions from '../actions';
+import { 
+  type Product, type Category, type Order, type HeroSettings, type StoreSettings, 
+  type DashboardStats, type AnalyticsReport,
+  deleteProduct, deleteCategory, saveHeroSettings, saveStoreSettings, updateOrderStatus
+} from '../actions';
 import ProductModal from './ProductModal';
+import CategoryModal from './CategoryModal';
 
 type Props = {
   initialProducts: Product[];
@@ -12,8 +16,8 @@ type Props = {
   initialOrders: Order[];
   initialHero: HeroSettings | null;
   initialStore: StoreSettings | null;
-  initialStats: actions.DashboardStats;
-  initialAnalytics: actions.AnalyticsReport;
+  initialStats: DashboardStats;
+  initialAnalytics: AnalyticsReport;
 };
 
 export default function AdminApp({ initialProducts, initialCategories, initialOrders, initialHero, initialStore, initialStats, initialAnalytics }: Props) {
@@ -22,10 +26,15 @@ export default function AdminApp({ initialProducts, initialCategories, initialOr
   const [u, setU] = useState('');
   const [p, setP] = useState('');
   const [error, setError] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   // Product Editor State
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+
+  // Category Editor State
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
   const openAddModal = () => {
     setEditingProduct(null);
@@ -35,6 +44,16 @@ export default function AdminApp({ initialProducts, initialCategories, initialOr
   const openEditModal = (product: Product) => {
     setEditingProduct(product);
     setIsProductModalOpen(true);
+  };
+
+  const openAddCategoryModal = () => {
+    setEditingCategory(null);
+    setIsCategoryModalOpen(true);
+  };
+
+  const openEditCategoryModal = (cat: Category) => {
+    setEditingCategory(cat);
+    setIsCategoryModalOpen(true);
   };
 
   const handleLogin = async () => {
@@ -79,35 +98,36 @@ export default function AdminApp({ initialProducts, initialCategories, initialOr
   };
 
   return (
-    <div className="admin-app">
+    <div className={`admin-app ${isSidebarOpen ? 'sidebar-open' : ''}`}>
       <aside className="sidebar">
+        <div className="sidebar-close-mobile" onClick={() => setIsSidebarOpen(false)}>×</div>
         <div className="sidebar-logo">
           <div className="sidebar-logo-text">KUI WOMEN</div>
           <div className="sidebar-logo-badge">Admin Panel</div>
         </div>
         <nav className="sidebar-nav">
           <div className="nav-group-label">Overview</div>
-          <div className={`nav-item ${activePage==='dashboard'?'active':''}`} onClick={()=>setActivePage('dashboard')}>
+          <div className={`nav-item ${activePage==='dashboard'?'active':''}`} onClick={()=>{setActivePage('dashboard'); setIsSidebarOpen(false);}}>
             <span className="nav-icon">◈</span> Dashboard
           </div>
-          <div className={`nav-item ${activePage==='orders'?'active':''}`} onClick={()=>setActivePage('orders')}>
+          <div className={`nav-item ${activePage==='orders'?'active':''}`} onClick={()=>{setActivePage('orders'); setIsSidebarOpen(false);}}>
             <span className="nav-icon">◻</span> Orders <span className="nav-badge">{initialOrders.length}</span>
           </div>
-          <div className={`nav-item ${activePage==='analytics'?'active':''}`} onClick={()=>setActivePage('analytics')}>
+          <div className={`nav-item ${activePage==='analytics'?'active':''}`} onClick={()=>{setActivePage('analytics'); setIsSidebarOpen(false);}}>
             <span className="nav-icon">📊</span> Analytics
           </div>
           <div className="nav-group-label">Catalogue</div>
-          <div className={`nav-item ${activePage==='products'?'active':''}`} onClick={()=>setActivePage('products')}>
+          <div className={`nav-item ${activePage==='products'?'active':''}`} onClick={()=>{setActivePage('products'); setIsSidebarOpen(false);}}>
             <span className="nav-icon">◇</span> Products
           </div>
-          <div className={`nav-item ${activePage==='categories'?'active':''}`} onClick={()=>setActivePage('categories')}>
+          <div className={`nav-item ${activePage==='categories'?'active':''}`} onClick={()=>{setActivePage('categories'); setIsSidebarOpen(false);}}>
             <span className="nav-icon">⊞</span> Categories
           </div>
           <div className="nav-group-label">Store</div>
-          <div className={`nav-item ${activePage==='hero'?'active':''}`} onClick={()=>setActivePage('hero')}>
+          <div className={`nav-item ${activePage==='hero'?'active':''}`} onClick={()=>{setActivePage('hero'); setIsSidebarOpen(false);}}>
             <span className="nav-icon">✦</span> Hero Banner
           </div>
-          <div className={`nav-item ${activePage==='settings'?'active':''}`} onClick={()=>setActivePage('settings')}>
+          <div className={`nav-item ${activePage==='settings'?'active':''}`} onClick={()=>{setActivePage('settings'); setIsSidebarOpen(false);}}>
             <span className="nav-icon">⊙</span> Settings
           </div>
         </nav>
@@ -125,6 +145,7 @@ export default function AdminApp({ initialProducts, initialCategories, initialOr
 
       <div className="main">
         <div className="topbar">
+          <button className="burger-menu" onClick={() => setIsSidebarOpen(true)}>☰</button>
           <div className="topbar-title">{titles[activePage]}</div>
           <span className="topbar-pill pill-live">● Live</span>
           <button className="topbar-btn" onClick={()=>window.open('/', '_blank')}>↗ View Store</button>
@@ -138,7 +159,13 @@ export default function AdminApp({ initialProducts, initialCategories, initialOr
               onAdd={openAddModal} 
             />
           )}
-          {activePage === 'categories' && <CategoriesView initialCategories={initialCategories} />}
+          {activePage === 'categories' && (
+            <CategoriesView 
+              initialCategories={initialCategories} 
+              onEdit={openEditCategoryModal} 
+              onAdd={openAddCategoryModal} 
+            />
+          )}
           {activePage === 'orders' && <OrdersView orders={initialOrders} />}
           {activePage === 'hero' && <HeroView hero={initialHero} />}
           {activePage === 'settings' && <SettingsView store={initialStore} />}
@@ -152,11 +179,17 @@ export default function AdminApp({ initialProducts, initialCategories, initialOr
         product={editingProduct}
         categories={initialCategories}
       />
+
+      <CategoryModal
+        isOpen={isCategoryModalOpen}
+        onClose={() => setIsCategoryModalOpen(false)}
+        category={editingCategory}
+      />
     </div>
   );
 }
 
-function DashboardView({ products, orders, stats }: { products: Product[], orders: Order[], stats: actions.DashboardStats }) {
+function DashboardView({ products, orders, stats }: { products: Product[], orders: Order[], stats: DashboardStats }) {
   return (
     <div>
       <div className="stats-grid">
@@ -206,7 +239,7 @@ function DashboardView({ products, orders, stats }: { products: Product[], order
 function ProductsView({ initialProducts, onEdit, onAdd }: { initialProducts: Product[], onEdit: (p: Product) => void, onAdd: () => void }) {
   const handleDelete = async (id: number) => {
     if(confirm('Are you sure?')) {
-      await actions.deleteProduct(id);
+      await deleteProduct(id);
       alert('Deleted!');
     }
   };
@@ -251,11 +284,18 @@ function ProductsView({ initialProducts, onEdit, onAdd }: { initialProducts: Pro
 }
 
 function OrdersView({ orders }: { orders: Order[] }) {
+  const handleMarkDelivered = async (id: string) => {
+    if (confirm('Mark this order as delivered?')) {
+      await updateOrderStatus(id, 'delivered');
+      alert('Order updated!');
+    }
+  };
+
   return (
     <div className="card">
       <div className="table-wrap">
         <table>
-          <thead><tr><th>Order ID</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Date</th></tr></thead>
+          <thead><tr><th>Order ID</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
           <tbody>
             {orders.map(o => (
               <tr key={o.id}>
@@ -265,6 +305,11 @@ function OrdersView({ orders }: { orders: Order[] }) {
                 <td className="td-mono">${o.total}</td>
                 <td><span className={`badge badge-${o.status==='delivered'?'published':'new'}`}>{o.status}</span></td>
                 <td className="text-muted">{o.date}</td>
+                <td>
+                  {o.status !== 'delivered' && (
+                    <button className="action-btn" onClick={() => handleMarkDelivered(o.id)}>Mark Delivered</button>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -274,9 +319,20 @@ function OrdersView({ orders }: { orders: Order[] }) {
   );
 }
 
-function CategoriesView({ initialCategories }: { initialCategories: Category[] }) {
+function CategoriesView({ initialCategories, onEdit, onAdd }: { initialCategories: Category[], onEdit: (c: Category) => void, onAdd: () => void }) {
+  const handleDelete = async (id: number) => {
+    if(confirm('Are you sure you want to delete this category? This might affect products using it.')) {
+      await deleteCategory(id);
+      alert('Deleted!');
+    }
+  };
+
   return (
     <div className="card">
+      <div className="card-header" style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+        <span className="card-title">Manage Categories</span>
+        <button className="btn btn-save" onClick={onAdd}>+ Add Category</button>
+      </div>
       <div className="table-wrap">
         <table>
           <thead><tr><th>Category</th><th>Slug</th><th>Status</th><th>Actions</th></tr></thead>
@@ -285,8 +341,13 @@ function CategoriesView({ initialCategories }: { initialCategories: Category[] }
               <tr key={c.id}>
                 <td className="td-name">{c.name}</td>
                 <td className="td-mono">{c.slug}</td>
-                <td><span className="badge badge-published">{c.status}</span></td>
-                <td><button className="action-btn danger" onClick={()=>actions.deleteCategory(c.id)}>Delete</button></td>
+                <td><span className={`badge badge-${c.status === 'published' ? 'published' : (c.status === 'draft' ? 'draft' : 'out')}`}>{c.status}</span></td>
+                <td>
+                  <div className="flex gap-8">
+                    <button className="action-btn" onClick={() => onEdit(c)}>Edit</button>
+                    <button className="action-btn danger" onClick={() => handleDelete(c.id)}>Delete</button>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -298,7 +359,7 @@ function CategoriesView({ initialCategories }: { initialCategories: Category[] }
 
 function HeroView({ hero }: { hero: HeroSettings | null }) {
   const [h, setH] = useState<Partial<HeroSettings>>(hero || {});
-  const save = async () => { await actions.saveHeroSettings(h); alert('Saved!'); };
+  const save = async () => { await saveHeroSettings(h); alert('Saved!'); };
 
   return (
     <div className="card">
@@ -318,7 +379,7 @@ function HeroView({ hero }: { hero: HeroSettings | null }) {
 
 function SettingsView({ store }: { store: StoreSettings | null }) {
   const [s, setS] = useState<Partial<StoreSettings>>(store || {});
-  const save = async () => { await actions.saveStoreSettings(s); alert('Saved!'); };
+  const save = async () => { await saveStoreSettings(s); alert('Saved!'); };
 
   return (
     <div className="card">
@@ -335,7 +396,7 @@ function SettingsView({ store }: { store: StoreSettings | null }) {
   );
 }
 
-function AnalyticsView({ report, orders }: { report: actions.AnalyticsReport, orders: Order[] }) {
+function AnalyticsView({ report, orders }: { report: AnalyticsReport, orders: Order[] }) {
   return (
     <div className="analytics-view">
       <div className="stats-grid">
@@ -365,7 +426,7 @@ function AnalyticsView({ report, orders }: { report: actions.AnalyticsReport, or
                 <div style={{color:'#999', textAlign:'center', padding: '40px 0'}}>Not enough data points yet. Start selling to see your growth.</div>
               ) : (
                 <div style={{display:'flex', alignItems:'flex-end', height: 200, gap: 4}}>
-                  {report.dailyRevenue.map((d, i) => (
+                   {report.dailyRevenue.map((d: { date: string, val: number }, i: number) => (
                     <div key={i} style={{flex:1, background:'var(--gold)', height: `${Math.min(100, (d.val / report.monthlyRevenue) * 500)}%`, minWidth: 4, borderRadius: '2px 2px 0 0'}} title={`${d.date}: $${d.val}`}></div>
                   ))}
                 </div>
@@ -386,7 +447,7 @@ function AnalyticsView({ report, orders }: { report: actions.AnalyticsReport, or
                 <div style={{color:'#999', textAlign:'center', padding: '40px 0'}}>Tracking traffic...</div>
               ) : (
                 <div style={{display:'flex', alignItems:'flex-end', height: 150, gap: 4}}>
-                  {report.dailyVisitors.map((v, i) => (
+                   {report.dailyVisitors.map((v: { date: string, val: number }, i: number) => (
                     <div key={i} style={{flex:1, background:'var(--blue)', height: `${Math.min(100, (v.val / 100) * 100)}%`, minWidth: 4, borderRadius: '2px 2px 0 0'}} title={`${v.date}: ${v.val} visits`}></div>
                   ))}
                 </div>

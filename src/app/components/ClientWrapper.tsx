@@ -6,8 +6,7 @@ import { CartProvider, useCart } from '../store/CartContext';
 import CartSidebar from './CartSidebar';
 import Cursor from './Cursor';
 import SearchModal from './SearchModal';
-import * as actions from '../actions';
-import { type Product } from '../actions';
+import { trackVisit, getProducts, type Product } from '../actions';
 
 function Nav({ storeName, onSearchOpen }: { storeName: string, onSearchOpen: () => void }) {
   const { cartCount, setCartOpen } = useCart();
@@ -31,7 +30,7 @@ function Nav({ storeName, onSearchOpen }: { storeName: string, onSearchOpen: () 
           <span className="icon-label">Account</span>
         </Link>
         <button className="cart-btn" onClick={() => setCartOpen(true)} aria-label="Cart">
-          <span className="icon-label">Bag</span>
+          <span className="icon-label">Cart</span>
           <span className="cart-count">{cartCount}</span>
         </button>
       </div>
@@ -44,11 +43,17 @@ export default function ClientWrapper({ children, storeName, whatsappNumber }: {
   const [products, setProducts] = useState<Product[]>([]);
 
   useEffect(() => {
-    // Record visit
-    actions.trackVisit(window.location.pathname, 'pending', navigator.userAgent);
-    
+    let visitorId = localStorage.getItem('kui-visitor-id');
+    if (!visitorId) {
+      visitorId = crypto.randomUUID();
+      localStorage.setItem('kui-visitor-id', visitorId);
+    }
+    trackVisit(window.location.pathname, visitorId, navigator.userAgent);
+  }, []);
+
+  useEffect(() => {
     if (isSearchOpen && products.length === 0) {
-      actions.getProducts().then(setProducts);
+      getProducts().then(setProducts);
     }
   }, [isSearchOpen, products.length]);
 

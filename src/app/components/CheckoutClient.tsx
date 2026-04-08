@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useCart } from '../store/CartContext';
+import { createOrder } from '../actions';
 import ClientWrapper from '../components/ClientWrapper';
 
 type Props = {
@@ -20,7 +21,15 @@ export default function CheckoutClient({ storeName, whatsappNumber }: Props) {
     emptyCart();
   };
 
-  const handleWhatsAppOrder = () => {
+  const handleWhatsAppOrder = async () => {
+    // Get name from form if it exists
+    const firstName = (document.querySelector('input[placeholder="First Name"]') as HTMLInputElement)?.value;
+    const lastName = (document.querySelector('input[placeholder="Last Name"]') as HTMLInputElement)?.value;
+    const name = (firstName || lastName) ? `${firstName} ${lastName}`.trim() : 'WhatsApp Customer';
+
+    const itemsCount = cart.reduce((acc, i) => acc + i.qty, 0);
+    await createOrder(name, itemsCount, cartTotal, 'pending');
+
     const itemsList = cart.map(item => `- ${item.name} (${item.selectedSize}/${item.selectedColor}) x${item.qty} - $${(item.salePrice || item.price) * item.qty}`).join('\n');
     const msg = encodeURIComponent(`Hi! I'd like to place an order for:\n\n${itemsList}\n\nTotal: $${cartTotal}`);
     window.open(`https://wa.me/${whatsappNumber?.replace(/\+/g, '') || '1234567890'}?text=${msg}`, '_blank');

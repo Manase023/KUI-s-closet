@@ -2,6 +2,7 @@
 
 import { getDb } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
+import bcrypt from 'bcryptjs';
 
 // ── TYPES ──────────────────────────────────────────────────────────────
 export type Product = {
@@ -77,13 +78,22 @@ export type AnalyticsReport = {
 // ── AUTH ───────────────────────────────────────────────────────────────
 export async function adminLogin(username: string, password: string): Promise<boolean> {
   const db = await getDb();
-  const user = await db.get('SELECT id FROM users WHERE username = ? AND password = ?', [username, password]);
-  return !!user;
+  const user = await db.get<{ id: number; password: string }>('SELECT id, password FROM users WHERE username = ?', [username]);
+  if (!user) return false;
+  // Support legacy plaintext passwords by auto-upgrading to bcrypt on first login
+  if (!user.password.startsWith('$2')) {
+    if (user.password !== password) return false;
+    const hashed = await bcrypt.hash(password, 12);
+    await db.run('UPDATE users SET password = ? WHERE id = ?', [hashed, user.id]);
+    return true;
+  }
+  return bcrypt.compare(password, user.password);
 }
 
 export async function changeAdminCredentials(username: string, password: string): Promise<void> {
   const db = await getDb();
-  await db.run('UPDATE users SET username = ?, password = ? WHERE id = 1', [username, password]);
+  const hashed = await bcrypt.hash(password, 12);
+  await db.run('UPDATE users SET username = ?, password = ? WHERE id = 1', [username, hashed]);
 }
 
 // ── PRODUCTS ───────────────────────────────────────────────────────────
@@ -153,19 +163,45 @@ export async function getProductsByCategory(slug: string): Promise<Product[]> {
 export async function createCategory(name: string, slug: string, status: string): Promise<void> {
   const db = await getDb();
   await db.run('INSERT INTO categories (name, slug, status) VALUES (?,?,?)', [name, slug, status]);
+  revalidatePath('/');
+  revalidatePath('/admin');
+}
+
+export async function updateCategory(id: number, name: string, slug: string, status: string): Promise<void> {
+  const db = await getDb();
+  await db.run('UPDATE categories SET name = ?, slug = ?, status = ? WHERE id = ?', [name, slug, status, id]);
+  revalidatePath('/');
   revalidatePath('/admin');
 }
 
 export async function deleteCategory(id: number): Promise<void> {
   const db = await getDb();
   await db.run('DELETE FROM categories WHERE id = ?', [id]);
+  revalidatePath('/');
   revalidatePath('/admin');
 }
 
-// ── ORDERS ─────────────────────────────────────────────────────────────
 export async function getOrders(): Promise<Order[]> {
   const db = await getDb();
   return db.all('SELECT * FROM orders ORDER BY rowid DESC');
+}
+
+export async function createOrder(customer: string, items: number, total: number, status: string = 'pending'): Promise<string> {
+  const db = await getDb();
+  const id = `ORD-${Math.floor(Math.random() * 100000).toString().padStart(5, '0')}`;
+  const date = new Date().toISOString().split('T')[0];
+  await db.run(
+    'INSERT INTO orders (id, customer, items, total, status, date) VALUES (?,?,?,?,?,?)',
+    [id, customer, items, total, status, date]
+  );
+  revalidatePath('/admin');
+  return id;
+}
+
+export async function updateOrderStatus(id: string, status: string): Promise<void> {
+  const db = await getDb();
+  await db.run('UPDATE orders SET status = ? WHERE id = ?', [status, id]);
+  revalidatePath('/admin');
 }
 
 // ── HERO SETTINGS ──────────────────────────────────────────────────────

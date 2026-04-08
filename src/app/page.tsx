@@ -5,6 +5,12 @@ import { getProducts, getCategories, getHeroSettings, getStoreSettings } from '.
 import ClientWrapper from './components/ClientWrapper';
 import AddToCartButton from './components/AddToCartButton';
 
+function sanitizeHtml(html: string): string {
+  return html
+    .replace(/<(?!\/?(?:em|strong|br)\b)[^>]*>/gi, '')
+    .replace(/on\w+\s*=/gi, '');
+}
+
 export async function generateMetadata(): Promise<Metadata> {
   const store = await getStoreSettings();
   const storeName = store?.store_name || "KUI WOMEN";
@@ -34,7 +40,7 @@ export default async function Storefront() {
           <div className="eyebrow">{hero?.tag || 'NEW SEASON DROP'}</div>
           <h1 
             className="hero-title"
-            dangerouslySetInnerHTML={{ __html: hero?.headline || 'Unveiling the Future of <em>Femininity</em>' }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(hero?.headline || 'Unveiling the Future of <em>Femininity</em>') }}
           />
           <p className="hero-desc">{hero?.description}</p>
           <div className="hero-actions">
@@ -57,7 +63,7 @@ export default async function Storefront() {
 
       {/* CATEGORY EXPLORER */}
       <div className="category-strip">
-        <Link href="/category/all" className="cat-pill">All Collections</Link>
+        <Link href="/category/all" className="cat-pill">Our Projects</Link>
         {categories.filter(c => c.status !== 'hidden').map((c) => (
           <Link key={c.id} href={`/category/${c.slug}`} className="cat-pill">
             {c.name}
@@ -70,7 +76,7 @@ export default async function Storefront() {
         <div className="section-header">
           <div>
             <div className="eyebrow">Latest Drops</div>
-            <h2 className="section-title">New <em>Arrivals</em></h2>
+            <h2 className="section-title">Our <em>Projects</em></h2>
           </div>
           <Link href="/lookup" className="nav-icon-btn">Explore Everything</Link>
         </div>

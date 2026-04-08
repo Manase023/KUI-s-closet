@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useCart } from '../store/CartContext';
+import { createOrder } from '../actions';
 import type { Product } from '../actions';
 
 type Props = {
@@ -83,7 +84,7 @@ export default function ProductOptions({ product, whatsappNumber }: Props) {
         style={{
           width: '100%',
           padding: '18px',
-          background: isOutOfStock ? 'page.tsx' : 'var(--accent)',
+          background: isOutOfStock ? '#ccc' : 'var(--accent)',
           color: isOutOfStock ? 'var(--muted)' : 'white',
           border: 'none',
           fontFamily: 'var(--sans)',
@@ -102,13 +103,16 @@ export default function ProductOptions({ product, whatsappNumber }: Props) {
           if(!isOutOfStock) e.currentTarget.style.transform = 'none';
         }}
       >
-        {isOutOfStock ? 'Out of Stock' : 'Add to Bag'}
+        {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
       </button>
 
       {!isOutOfStock && (
         <button
-          onClick={() => {
-            const msg = encodeURIComponent(`Hi! I'd like to order: ${product.name}${size ? ` (Size: ${size})` : ''}${color ? ` (Color: ${color})` : ''}. Price: $${product.salePrice || product.price}`);
+          onClick={async () => {
+            const price = product.salePrice || product.price;
+            await createOrder('WhatsApp Customer', 1, price, 'pending');
+            
+            const msg = encodeURIComponent(`Hi! I'd like to order: ${product.name}${size ? ` (Size: ${size})` : ''}${color ? ` (Color: ${color})` : ''}. Price: $${price}`);
             window.open(`https://wa.me/${whatsappNumber?.replace(/\+/g, '') || '1234567890'}?text=${msg}`, '_blank');
           }}
           style={{

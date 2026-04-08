@@ -8,6 +8,7 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const resolvedParams = await params;
+  if (!resolvedParams.id) return { title: 'Product Not Found' };
   const product = await getProductById(parseInt(resolvedParams.id, 10));
   if (!product) return { title: 'Product Not Found' };
 
@@ -23,6 +24,9 @@ type PageProps = {
 
 export default async function ProductPage({ params }: PageProps) {
   const resolvedParams = await params;
+  if (!resolvedParams.id) {
+    notFound();
+  }
   const store = await getStoreSettings();
   const product = await getProductById(parseInt(resolvedParams.id, 10));
 
